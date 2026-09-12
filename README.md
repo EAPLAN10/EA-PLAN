@@ -1,19 +1,14 @@
 # EA PLAN
 
-Your Personalized Planning Journey
+EA PLAN — Your Personalized Planning Journey.
 
-EA PLAN is a planning and reflection web app for creators and anyone who wants to turn intentions into deliberate steps.
+## Production structure
+- `index.html` — application entry point
+- `src/app.js` — application UI and features
+- `src/supabase.js` — Supabase browser client
+- `src/styles/app.css` — original EA PLAN visual system
+- `public/assets/` — branding and PWA assets
+- `EA_PLAN_SUPABASE_SCHEMA.sql` — database/RLS setup
 
-## Current
-
-Production foundation / v3.
-
-## Roadmap
-
-1. Public HTTPS deployment
-2. Real authentication
-3. Cloud database
-4. Planning / Goals / Journal / Ideas / Projects
-5. Journey and milestones
-6. Private / Public creator space
-7. PWA
+## Deployment
+This is a static SPA. In Vercel use Framework Preset `Other`, Root Directory `./`, Build Command empty/default, Output Directory `.`.
