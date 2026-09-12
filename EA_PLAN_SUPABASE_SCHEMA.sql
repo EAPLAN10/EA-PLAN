@@ -118,3 +118,31 @@ $$;
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users
 for each row execute procedure public.handle_new_user();
+
+
+-- PROFILE MEDIA (foto profil + background)
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS avatar_url TEXT,
+  ADD COLUMN IF NOT EXISTS background_url TEXT;
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('profile-media', 'profile-media', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "profile media upload own folder" ON storage.objects;
+CREATE POLICY "profile media upload own folder"
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'profile-media' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+DROP POLICY IF EXISTS "profile media update own folder" ON storage.objects;
+CREATE POLICY "profile media update own folder"
+ON storage.objects FOR UPDATE TO authenticated
+USING (bucket_id = 'profile-media' AND (storage.foldername(name))[1] = auth.uid()::text)
+WITH CHECK (bucket_id = 'profile-media' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+DROP POLICY IF EXISTS "profile media delete own folder" ON storage.objects;
+CREATE POLICY "profile media delete own folder"
+ON storage.objects FOR DELETE TO authenticated
+USING (bucket_id = 'profile-media' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+NOTIFY pgrst, 'reload schema';
