@@ -1,23 +1,19 @@
-# EA PLAN — Final Implementation
+# EA PLAN — paket revisi terbaru
 
-Platform final: perencanaan pribadi + publikasi karya. Desain EA PLAN dipertahankan: background transparan, card premium, nuansa gold/ivory, dan welcome opaque.
+Paket ini berisi build statis yang siap dimasukkan ke GitHub dan dideploy ke Vercel.
 
-## Struktur utama
-- Beranda: quote harian + karya Terbaru, Terpopuler, Menarik Dilihat, Komentar Mereka.
-- Karya: pencarian, kategori, karya publik, karya saya, draft/publikasi.
-- Buat: buku/tulisan, komik/galeri, webtoon, audio, file.
-- Statistik: progress keseluruhan + grafik riwayat, target, projects, journal, ringkasan.
-- Profil: foto/background, data profil, karya saya, menu Karya Publik, Ide & Catatan, Proyek, Journal, Tentang, Koleksi, Panduan.
+## Perubahan utama
+- Logo EA PLAN `public/assets/logo.png` sudah dibuat **PNG transparan**: latar hitam pada file logo tidak ikut tampil.
+- Splash/welcome menempatkan logo + tagline di tengah vertikal dan horizontal.
+- Teks `EA PLAN` duplikat di bawah logo pada splash dihapus.
+- Profil pengguna dapat menyimpan nama, username, bio, foto profil, dan background secara lokal untuk build demo.
+- Foto profil yang tersimpan dipakai kembali pada avatar/header dan halaman profil.
+- Beranda tidak lagi menampilkan Progress, Target Aktif, Projects, Journal, dan Langkah Hari Ini; area tersebut dipusatkan untuk statistik.
+- Bagian kedua `Menarik Dilihat` menjadi `Komentar Mereka`.
 
-## Supabase
-1. Pastikan schema dasar EA PLAN sudah ada.
-2. Jalankan `EA_PLAN_FINAL_SCHEMA.sql` sekali di Supabase SQL Editor.
-3. Jika owner ingin mengubah Quote Hari Ini, isi `app_settings.owner_email` dengan email akun pemilik.
-4. Pastikan Data API mengekspos schema `public`.
+> Catatan: penyimpanan media pada build ini menggunakan localStorage/Data URL. Untuk production multi-device, hubungkan ke Supabase Storage + database sesuai migration/backend yang digunakan.
 
-## Vercel
-Framework: Other
-Root Directory: ./
-Build Command: kosong/default
-Output Directory: kosong/default
-Install Command: kosong/default
+## Deploy
+1. Upload isi folder ini ke repository GitHub.
+2. Import repository tersebut ke Vercel.
+3. Jika memakai Supabase, isi environment variable di Vercel sesuai project Supabase Anda.
