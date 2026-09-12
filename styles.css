@@ -8,3 +8,21 @@
 /* profile media */
 .profilePage{margin:-32px -32px 0}.profileHero{min-height:260px;background-size:cover;background-position:center;display:flex;align-items:flex-end;padding:34px 32px;color:white}.profileHeroInner{max-width:760px}.profileHero h1{font:500 46px Georgia,serif;margin:7px 0}.profileHero p{margin:0;color:#eee4d8;max-width:560px;line-height:1.6}.lightKicker{color:#f1d19a}.profileCard{position:relative;margin:-32px 32px 0;z-index:2}.profileIdentity{display:flex;align-items:center;gap:20px}.profileIdentity h2{font:500 34px Georgia,serif;margin:4px 0}.profileAvatar{width:104px;height:104px;border-radius:50%;background:#e8dccb;border:4px solid var(--paper);box-shadow:0 8px 25px #241b1420;position:relative;display:grid;place-items:center;overflow:visible;color:#38291c;font-weight:800;font-size:28px}.profileAvatar>img{width:100%;height:100%;object-fit:cover;border-radius:50%}.cameraBtn{position:absolute;right:-4px;bottom:0;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--gold2);color:#2a1f15;border:3px solid var(--paper);cursor:pointer;font-weight:900}.cameraBtn input,.mediaBtn input{display:none}.profileActions{display:flex;gap:10px;flex-wrap:wrap;margin:22px 0 4px}.mediaBtn{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:#fffdf8;color:var(--ink);border-radius:10px;padding:9px 12px;font-size:12px;cursor:pointer}.moreMenu{margin-top:28px;padding:18px;border:1px solid var(--line);border-radius:18px;background:#faf6ee}.moreMenu .kicker{margin-bottom:4px}.moreMenu button{width:100%;display:grid;grid-template-columns:38px 1fr 20px;gap:10px;align-items:center;text-align:left;padding:14px 4px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink)}.moreMenu button:last-child{border-bottom:0}.moreMenu button>b{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#f4eadb;color:#6b4c2d}.moreMenu button span{display:grid;gap:3px}.moreMenu button strong{font-size:15px}.moreMenu button small{color:var(--muted);font-size:12px}.moreMenu button i{font-size:22px;color:#8a7c6d;font-style:normal}.avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}.avatar{overflow:hidden}
 @media(max-width:800px){.profilePage{margin:-18px -16px 0}.profileHero{min-height:250px;padding:28px 20px 54px}.profileHero h1{font-size:38px}.profileCard{margin:-34px 16px 0;padding:20px}.profileIdentity{align-items:flex-start}.profileAvatar{width:88px;height:88px}.profileIdentity h2{font-size:28px}.profileActions{margin-top:18px}.moreMenu{margin-top:24px}.moreMenu button{padding:13px 2px}}
+
+
+/* EA PLAN global visual background — all app pages show the background through translucent surfaces.
+   Welcome remains intentionally opaque via .authShell. */
+html,body{background:var(--black) url("/assets/splash.jpg") center center/cover fixed no-repeat;}
+body:before{content:"";position:fixed;inset:0;z-index:-1;background:rgba(23,19,15,.34);pointer-events:none;}
+.appShell{background:rgba(247,242,233,.20);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
+.main{background:transparent;}
+.side{background:rgba(23,19,15,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.card{background:rgba(255,253,248,.84);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+.item{background:rgba(255,255,255,.72);}
+.onboard{background:rgba(23,19,15,.36);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
+.onboardBox{background:rgba(33,27,22,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.authFull{background:rgba(23,19,15,.40);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
+.authFull .authBox{background:rgba(33,27,22,.88);border:1px solid rgba(73,61,49,.9);border-radius:28px;padding:28px;}
+.profileCard{background:rgba(255,253,248,.84);}
+.moreMenu{background:rgba(250,246,238,.82);}
+@media(max-width:800px){.appShell{background:rgba(247,242,233,.18)}.main{background:transparent}.authFull .authBox{padding:24px 20px}}
