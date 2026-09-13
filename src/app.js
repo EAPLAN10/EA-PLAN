@@ -5,7 +5,7 @@ const nav=[
   ['ideas','✦','Ideas'],['projects','□','Projects'],['journey','↗','Journey']
 ];
 const profileMenu=[['stats','Statistik'],['explore','Jelajahi'],['collection','Koleksi'],['about','Tentang EA PLAN'],['guide','Panduan']];
-let state={user:null,supabase:null,active:'home',onStep:1,selected:[],menu:false,modal:null,pendingProfile:null};
+let state={user:null,supabase:null,active:'home',onStep:1,selected:[],menu:false,modal:null,pendingProfile:null,localMode:false};
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const meta=()=>state.user?.user_metadata||{};
@@ -18,30 +18,96 @@ function toast(msg){const el=document.createElement('div');el.className='toast';
 
 async function boot(){
   splash();
-  state.supabase=await window.EA_SUPABASE_READY;
+  try{state.supabase=await window.EA_SUPABASE_READY}catch(_){state.supabase=null}
+  const localUser=(()=>{try{return JSON.parse(localStorage.getItem('ea_local_user')||'null')}catch{return null}})();
   if(state.supabase){
-    const {data:{session}}=await state.supabase.auth.getSession(); state.user=session?.user||null;
-    state.supabase.auth.onAuthStateChange((_e,s)=>{state.user=s?.user||null;if(state.user)(meta().onboarding_complete===false?onboarding():renderApp());else welcome()});
-  }else state.user=JSON.parse(localStorage.getItem('ea_user')||'null');
-  setTimeout(()=>state.user?(meta().onboarding_complete===false?onboarding():renderApp()):welcome(),2400);
+    const {data:{session}}=await state.supabase.auth.getSession();
+    state.user=session?.user||localUser||null;
+    state.localMode=!session&&!!localUser;
+    state.supabase.auth.onAuthStateChange((_e,s)=>{
+      if(state.localMode)return;
+      state.user=s?.user||null;
+      if(state.user)(meta().onboarding_complete===false?onboarding():renderApp());else welcome();
+    });
+  }else{state.user=localUser;state.localMode=!!localUser}
+  setTimeout(()=>state.user?(meta().onboarding_complete===false?onboarding():renderApp()):welcome(),2200);
 }
 function splash(){app.innerHTML=`<section class="splash"><div class="splashPhoto"></div><div class="splashShade"></div><div class="splashContent"><img src="${A}logo.png" class="splashLogo"><div class="splashLine"></div><div class="tag">YOUR PERSONALIZED PLANNING JOURNEY</div></div></section>`}
 
 function welcome(){app.innerHTML=`<div class="authShell"><div class="authVisual"><div class="authPhoto"></div><div class="visualShade"></div><div class="visualBrand"><img src="${A}logo.png"><span>PLAN · CREATE · REFLECT · GROW</span></div><div class="visualText"><p class="eyebrow">RUANG UNTUK MENJALANI</p><h1>Rancang hidupmu.<br><em>Rawat perjalananmu.</em></h1><p>EA PLAN menyatukan rencana, target, karya, catatan, dan refleksi dalam satu ruang yang tenang.</p></div></div><div class="authPanel"><div class="authBox"><img src="${A}logo.png" class="authLogo"><h2>Mulai perjalananmu.</h2><p class="sub">Satu ruang untuk merencanakan langkah, mencipta karya, dan melihat pertumbuhanmu dari waktu ke waktu.</p><div class="form"><button class="goldBtn" onclick="register()">Buat Akun</button><button class="ghostBtn" onclick="login()">Sudah punya akun · Masuk</button></div><div class="authFoot">Privat untuk perjalananmu. Publik untuk karya yang ingin kamu bagikan.</div></div></div></div>`}
 function register(){auth('register')} function login(){auth('login')}
 function auth(mode){const reg=mode==='register';app.innerHTML=`<div class="authOnly"><div class="authBox authCard"><button class="backBtn" onclick="welcome()">← Kembali</button><img src="${A}logo.png" class="authLogo small"><p class="eyebrow">${reg?'MEMULAI RUANGMU':'SELAMAT DATANG KEMBALI'}</p><h2>${reg?'Buat akun.':'Masuk ke EA PLAN.'}</h2><p class="sub">${reg?'Bangun ruang perjalanan yang terasa milikmu.':'Lanjutkan rencana dan karya yang sedang kamu jalani.'}</p><form class="form" onsubmit="submitAuth(event,'${mode}')">${reg?'<div class="fieldRow"><label>Nama<input class="input" id="name" autocomplete="name" required></label><label>Username<input class="input" id="username" autocomplete="username" required></label></div>':''}<label>Email<input class="input" id="email" type="email" autocomplete="email" required></label><label>Password<input class="input" id="password" type="password" minlength="6" autocomplete="new-password" required></label><div id="err" class="error"></div><button class="goldBtn">${reg?'Buat Akun':'Masuk'}</button></form><div class="switch">${reg?'Sudah punya akun?':'Belum punya akun?'} <button class="link" onclick="${reg?'login()':'register()'}">${reg?'Masuk':'Buat akun'}</button> · <button class="link" onclick="forgot()">Lupa password?</button></div></div></div>`}
-async function submitAuth(e,mode){e.preventDefault();const er=document.getElementById('err');if(!state.supabase){er.textContent='Supabase belum terhubung. Periksa Environment Variables Vercel.';return}er.textContent='';
- if(mode==='register'){const profile={name:name.value.trim(),username:username.value.trim(),bio:'',onboarding_complete:false};const {data,error}=await state.supabase.auth.signUp({email:email.value.trim(),password:password.value,data:profile});if(error){er.textContent=error.message;return}state.pendingProfile={email:email.value.trim(),...profile};if(data.session){state.user=data.user;onboarding();}else{state.user=null;onboarding();}}
- else {const {data,error}=await state.supabase.auth.signInWithPassword({email:email.value.trim(),password:password.value});if(error){er.textContent=error.message;return}state.user=data.user;(meta().onboarding_complete===false?onboarding():renderApp())}}
+async function submitAuth(e,mode){
+  e.preventDefault();
+  const er=document.getElementById('err');
+  const emailEl=document.getElementById('email'),passwordEl=document.getElementById('password');
+  const emailValue=emailEl?.value.trim()||'',passwordValue=passwordEl?.value||'';
+  if(!emailValue||!passwordValue){er.textContent='Email dan password wajib diisi.';return}
+  er.textContent='';
+  if(mode==='register'){
+    const nameValue=document.getElementById('name')?.value.trim()||'Kreator';
+    const usernameValue=document.getElementById('username')?.value.trim()||'eaplan';
+    const profile={name:nameValue,username:usernameValue,bio:'',onboarding_complete:false};
+    state.pendingProfile={email:emailValue,...profile};
+    if(!state.supabase){
+      const localUser={id:`local_${uid()}`,email:emailValue,user_metadata:profile};
+      state.user=localUser;state.localMode=true;localStorage.setItem('ea_local_user',JSON.stringify(localUser));
+      onboarding();return;
+    }
+    const {data,error}=await state.supabase.auth.signUp({email:emailValue,password:passwordValue,data:profile});
+    if(error){er.textContent=error.message;return}
+    if(data.session){state.localMode=false;state.user=data.user;onboarding();}
+    else{
+      // Supabase may require email confirmation. Keep the user moving through onboarding instead of trapping them on this screen.
+      const localUser={id:`pending_${uid()}`,email:emailValue,user_metadata:profile};
+      state.user=localUser;state.localMode=true;localStorage.setItem('ea_local_user',JSON.stringify(localUser));
+      onboarding();
+    }
+    return;
+  }
+  if(!state.supabase){
+    const local=(()=>{try{return JSON.parse(localStorage.getItem('ea_local_user')||'null')}catch{return null}})();
+    if(local&&local.email.toLowerCase()===emailValue.toLowerCase()){state.user=local;state.localMode=true;renderApp();return}
+    er.textContent='Supabase belum terhubung. Gunakan akun yang sudah dibuat pada perangkat ini atau periksa Environment Variables Vercel.';return;
+  }
+  const {data,error}=await state.supabase.auth.signInWithPassword({email:emailValue,password:passwordValue});
+  if(error){er.textContent=error.message;return}
+  state.localMode=false;state.user=data.user;
+  const complete=meta().onboarding_complete!==false;
+  complete?renderApp():onboarding();
+}
 function forgot(){app.innerHTML=`<div class="authOnly"><div class="authBox authCard"><button class="backBtn" onclick="login()">← Kembali masuk</button><img src="${A}logo.png" class="authLogo small"><p class="eyebrow">PEMULIHAN AKUN</p><h2>Reset password.</h2><p class="sub">Masukkan email dan kami akan mengirimkan instruksi pemulihan.</p><form class="form" onsubmit="submitForgot(event)"><label>Email<input class="input" id="resetEmail" type="email" required></label><div id="err" class="error"></div><button class="goldBtn">Kirim instruksi</button></form></div></div>`}
-async function submitForgot(e){e.preventDefault();const er=document.getElementById('err');if(!state.supabase){er.textContent='Supabase belum terhubung.';return}const {error}=await state.supabase.auth.resetPasswordForEmail(resetEmail.value.trim(),{redirectTo:location.origin});er.textContent=error?.message||'Instruksi pemulihan telah dikirim jika email terdaftar.'}
+async function submitForgot(e){e.preventDefault();const er=document.getElementById('err');const input=document.getElementById('resetEmail');const value=input?.value.trim()||'';if(!value){er.textContent='Masukkan email terlebih dahulu.';return}if(!state.supabase){er.textContent='Supabase belum terhubung.';return}const {error}=await state.supabase.auth.resetPasswordForEmail(value,{redirectTo:location.origin});er.textContent=error?.message||'Instruksi pemulihan telah dikirim jika email terdaftar.'}
 
 function onboarding(){state.onStep=1;renderOnboarding()}
 function renderOnboarding(){const body=state.onStep===1?`<p class="eyebrow">LANGKAH 01</p><h2>Apa yang ingin kamu kembangkan?</h2><p class="sub">Pilih satu atau beberapa ruang yang paling dekat dengan perjalananmu.</p><div class="choices">${['Karya','Bisnis','Karier','Pendidikan','Kehidupan','Kreativitas'].map(x=>`<button class="choice ${state.selected.includes(x)?'selected':''}" onclick="pick('${x}')"><span>${state.selected.includes(x)?'✓':'＋'}</span>${x}</button>`).join('')}</div>`:state.onStep===2?`<p class="eyebrow">LANGKAH 02</p><h2>Ceritakan sedikit tentangmu.</h2><p class="sub">Tidak harus sempurna. Kamu bisa mengubahnya kapan saja.</p><textarea class="input area" id="bio" rows="6" placeholder="Apa yang sedang kamu perjuangkan atau bangun?">${esc(meta().bio||'')}</textarea>`:`<p class="eyebrow">LANGKAH 03</p><h2>Mulai dari satu target.</h2><p class="sub">Target pertama bisa sederhana. Yang penting berarti untukmu.</p><input class="input" id="firstGoal" placeholder="Contoh: menyelesaikan karya pertama saya">`;
  app.innerHTML=`<div class="onboard"><div class="onboardBox"><div class="onboardHead"><img src="${A}logo.png"><div><strong>EA PLAN</strong><span>RUANG PERJALANAN</span></div></div><div class="stepbar">${[1,2,3].map(i=>`<i class="${i<=state.onStep?'active':''}"></i>`).join('')}</div>${body}<div class="actions">${state.onStep>1?'<button class="ghostBtn" onclick="state.onStep--;renderOnboarding()">Kembali</button>':''}<button class="goldBtn" onclick="nextOnboard()">${state.onStep<3?'Lanjut':'Masuk ke EA PLAN'}</button></div></div></div>`}
 function showConfirmation(){app.innerHTML=`<div class="authOnly"><div class="authBox authCard"><img src="${A}logo.png" class="authLogo small"><p class="eyebrow">RUANGMU SIAP</p><h2>Hampir selesai.</h2><p class="sub">Onboarding sudah tersimpan. Karena konfirmasi email Supabase aktif, buka email pendaftaranmu lalu masuk ke EA PLAN untuk melanjutkan ke Beranda.</p><div class="form"><button class="goldBtn" onclick="login()">Masuk ke EA PLAN</button><button class="ghostBtn" onclick="welcome()">Kembali</button></div><div class="authFoot">Jika email konfirmasi dinonaktifkan di Supabase, kamu akan langsung masuk ke Beranda setelah onboarding.</div></div></div>`}
 function pick(x){state.selected=state.selected.includes(x)?state.selected.filter(y=>y!==x):[...state.selected,x];renderOnboarding()}
-async function nextOnboard(){if(state.onStep===2){const bio=document.getElementById('bio').value.trim();if(state.supabase&&state.user){const {error}=await state.supabase.auth.updateUser({data:{...meta(),bio,focus:state.selected}});if(error){toast(error.message);return}}else{state.pendingProfile={...(state.pendingProfile||{}),bio,focus:state.selected}}}if(state.onStep===3){const g=document.getElementById('firstGoal').value.trim();if(g){const goals=load('goals',[]);goals.unshift({id:uid(),title:g,done:false,created:new Date().toISOString()});save('goals',goals)}if(state.supabase&&state.user){const {data,error}=await state.supabase.auth.updateUser({data:{...meta(),onboarding_complete:true,focus:state.selected}});if(error){toast(error.message);return}state.user=data.user;renderApp();}else{showConfirmation();}return}state.onStep++;renderOnboarding()}
+async function nextOnboard(){
+  if(state.onStep===1&&!state.selected.length){toast('Pilih setidaknya satu ruang yang ingin kamu kembangkan.');return}
+  if(state.onStep===2){
+    const bio=document.getElementById('bio').value.trim();
+    if(state.supabase&&state.user&&!state.localMode){const {error}=await state.supabase.auth.updateUser({data:{...meta(),bio,focus:state.selected}});if(error){toast(error.message);return}}
+    state.pendingProfile={...(state.pendingProfile||{}),bio,focus:state.selected};
+  }
+  if(state.onStep===3){
+    const g=document.getElementById('firstGoal').value.trim();
+    if(g){const goals=load('goals',[]);goals.unshift({id:uid(),title:g,done:false,created:new Date().toISOString()});save('goals',goals)}
+    if(state.supabase&&state.user&&!state.localMode){
+      const {data,error}=await state.supabase.auth.updateUser({data:{...meta(),onboarding_complete:true,focus:state.selected}});
+      if(error){toast(error.message);return}
+      state.user=data.user;renderApp();
+    }else{
+      const profile={...(state.pendingProfile||{}),focus:state.selected,onboarding_complete:true};
+      const localUser={...(state.user||{}),id:state.user?.id||`local_${uid()}`,email:profile.email||state.user?.email||'',user_metadata:profile};
+      state.user=localUser;state.localMode=true;localStorage.setItem('ea_local_user',JSON.stringify(localUser));
+      renderApp();toast('Ruang EA PLAN siap digunakan.');
+    }
+    return;
+  }
+  state.onStep++;renderOnboarding();
+}
 
 function renderApp(){state.menu=false;const n=nav.find(x=>x[0]===state.active);const content=pages[state.active]?pages[state.active]():home();app.innerHTML=`<div class="appShell" ${backgroundStyle()}><aside class="side"><div class="sideBrand"><img src="${A}logo.png"><div><b>EA PLAN</b><span>RUANG PERJALANAN</span></div></div><nav class="nav">${nav.map(x=>`<button class="${x[0]===state.active?'active':''}" onclick="go('${x[0]}')"><span class="navIcon">${x[1]}</span><span>${x[2]}</span></button>`).join('')}</nav><div class="sideBottom"><button class="profileNav ${state.active==='profile'?'active':''}" onclick="go('profile')">${avatarMini()}<span>Profil</span></button></div></aside><main class="main"><header class="top"><div><p class="eyebrow">${state.active==='home'?'RUANG PERJALANAN':'EA PLAN'}</p><h2>${n?.[2]||pageTitle()}</h2></div><div class="topActions"><button class="quickBtn" onclick="newItem()">＋ <span>Tambah</span></button><div class="profileWrap"><button class="avatar" onclick="toggleMenu()">${avatarMarkup(true)}</button>${state.menu?profileDropdown():''}</div></div></header>${content}</main><nav class="mobileNav">${[['home','⌂','Beranda'],['planning','☷','Planning'],['goals','◎','Goals'],['journal','✎','Journal'],['profile','◯','Profil']].map(x=>`<button class="${x[0]===state.active?'active':''}" onclick="go('${x[0]}')"><b>${x[1]}</b><span>${x[2]}</span></button>`).join('')}</nav></div>`}
 function avatarMarkup(full=false){const u=meta();return u.photo_url?`<img src="${esc(u.photo_url)}" alt="Profil">`:`<span>${initials()}</span>`}
@@ -76,11 +142,28 @@ function removeItem(type,id){const arr=load(type,[]).filter(x=>x.id!==id);save(t
 function editProgress(id){const arr=load('projects',[]),x=arr.find(a=>a.id===id);if(!x)return;const p=prompt('Progress project (0–100)',String(x.progress||0));if(p===null)return;x.progress=Math.max(0,Math.min(100,Number(p)||0));save('projects',arr);renderApp()}
 function renderModal(){const old=document.querySelector('.modal');if(old)old.remove();document.body.insertAdjacentHTML('beforeend',state.modal)}
 function closeModal(){const m=document.querySelector('.modal');if(m)m.remove();state.modal=null}
-async function saveProfile(){const er=document.getElementById('profileErr');if(!state.supabase||!state.user){er.textContent='Sesi Supabase belum tersedia.';return}const payload={...meta(),name:document.getElementById('editName').value.trim()||'Kreator',username:document.getElementById('editUsername').value.trim()||'eaplan',bio:document.getElementById('editBio').value.trim()};const {data,error}=await state.supabase.auth.updateUser({data:payload});if(error){er.textContent=error.message;return}state.user=data.user;closeModal();renderApp();toast('Profil berhasil diperbarui.')}
+async function saveProfile(){
+  const er=document.getElementById('profileErr');
+  const payload={...meta(),name:document.getElementById('editName').value.trim()||'Kreator',username:document.getElementById('editUsername').value.trim()||'eaplan',bio:document.getElementById('editBio').value.trim()};
+  if(state.supabase&&state.user&&!state.localMode){const {data,error}=await state.supabase.auth.updateUser({data:payload});if(error){er.textContent=error.message;return}state.user=data.user;}
+  else{state.user={...(state.user||{}),user_metadata:payload};localStorage.setItem('ea_local_user',JSON.stringify(state.user))}
+  closeModal();renderApp();toast('Profil berhasil diperbarui.');
+}
 function fileToPng(file,max=1600){return new Promise((resolve,reject)=>{if(!file)return resolve(null);if(file.size>8*1024*1024)return reject(new Error('Ukuran file maksimal 8 MB.'));const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*s));c.height=Math.max(1,Math.round(im.height*s));c.getContext('2d').drawImage(im,0,0,c.width,c.height);c.toBlob(b=>b?resolve(b):reject(new Error('Konversi gambar gagal.')),'image/png')};im.onerror=()=>reject(new Error('Gambar tidak valid.'));im.src=r.result};r.onerror=()=>reject(new Error('File tidak dapat dibaca.'));r.readAsDataURL(file)})}
-async function saveMedia(){const er=document.getElementById('mediaErr'),p=document.getElementById('profilePhotoInput')?.files[0],b=document.getElementById('profileBgInput')?.files[0];if(!p&&!b){er.textContent='Pilih foto profil atau background terlebih dahulu.';return}if(!state.supabase||!state.user){er.textContent='Sesi Supabase belum tersedia.';return}er.textContent='Mengunggah...';try{const upload=async(file,name,max)=>{if(!file)return null;const blob=await fileToPng(file,max),path=`${state.user.id}/${name}.png`;const {error}=await state.supabase.storage.from('profile-media').upload(path,blob,{contentType:'image/png',upsert:true,cacheControl:'3600'});if(error)throw error;return state.supabase.storage.from('profile-media').getPublicUrl(path).data.publicUrl};const [photo,bg]=await Promise.all([upload(p,'profile',1200),upload(b,'background',2200)]);const {data,error}=await state.supabase.auth.updateUser({data:{...meta(),...(photo?{photo_url:photo}:{}),...(bg?{background_url:bg}:{})}});if(error)throw error;state.user=data.user;renderApp();toast('Media profil berhasil disimpan.')}catch(e){er.textContent=e.message||'Gagal mengunggah media.'}}
+async function saveMedia(){
+  const er=document.getElementById('mediaErr'),p=document.getElementById('profilePhotoInput')?.files[0],b=document.getElementById('profileBgInput')?.files[0];
+  if(!p&&!b){er.textContent='Pilih foto profil atau background terlebih dahulu.';return}
+  if(!state.supabase||!state.user||state.localMode){er.textContent='Media profil memerlukan sesi Supabase. Login dengan akun EA PLAN untuk mengunggahnya.';return}
+  er.textContent='Mengunggah...';
+  try{
+    const upload=async(file,name,max)=>{if(!file)return null;const blob=await fileToPng(file,max),path=`${state.user.id}/${name}.png`;const {error}=await state.supabase.storage.from('profile-media').upload(path,blob,{contentType:'image/png',upsert:true,cacheControl:'3600'});if(error)throw error;return state.supabase.storage.from('profile-media').getPublicUrl(path).data.publicUrl};
+    const [photo,bg]=await Promise.all([upload(p,'profile',1200),upload(b,'background',2200)]);
+    const {data,error}=await state.supabase.auth.updateUser({data:{...meta(),...(photo?{photo_url:photo}:{}),...(bg?{background_url:bg}:{})}});
+    if(error)throw error;state.user=data.user;renderApp();toast('Media profil berhasil disimpan.');
+  }catch(e){er.textContent=e.message||'Gagal mengunggah media.'}
+}
 function toggleMenu(){state.menu=!state.menu;renderApp()}
 function go(id){state.active=id;state.menu=false;renderApp();window.scrollTo({top:0,behavior:'smooth'})}
-async function signOut(){if(state.supabase)await state.supabase.auth.signOut();localStorage.removeItem('ea_user');state.user=null;welcome()}
+async function signOut(){if(state.supabase&&!state.localMode)await state.supabase.auth.signOut();localStorage.removeItem('ea_user');localStorage.removeItem('ea_local_user');state.user=null;state.localMode=false;state.pendingProfile=null;welcome()}
 window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 boot();
