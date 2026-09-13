@@ -1,35 +1,48 @@
-# EA PLAN — Production v3
+# EA PLAN — Production Supabase
 
-## Current milestone
+## Current release
 
-Premium mobile-first web app foundation with:
+This package replaces the previous demo/local-browser authentication with real Supabase Auth.
 
-- cinematic splash using the supplied EA PLAN photography
-- separated brand asset
-- proper PWA icon assets
-- welcome, register, login, forgot-password UI
-- onboarding flow
-- dashboard shell
-- core navigation
-- responsive mobile navigation
+Included:
+- EA PLAN mobile-first visual shell
+- Splash, Welcome, Register, Login, Forgot Password
+- 3-step onboarding
+- Real Supabase Email/Password authentication
+- Persistent Supabase session
+- Password reset flow
+- Profile metadata stored in Supabase Auth user metadata
+- Core navigation: Planning, Goals, Journal, Ideas, Projects, Journey, Statistik, Profil
+- Responsive mobile navigation
+- PWA assets
+- Vercel `/api/config` endpoint
 
-## Important
+## Authentication
 
-Authentication is still demo/local-browser authentication. Do NOT enter sensitive real credentials into the local `index.html` file.
+The frontend does **not** use `localStorage` as an authentication fallback and does not create demo accounts.
 
-## Next deployment path
+Required Vercel Production environment variables:
 
-GitHub repository EA-PLAN → Vercel → public HTTPS URL → Supabase Authentication + Database → production data security / Row Level Security → PWA installability → custom domain
+- `SUPABASE_URL` = bare project URL, for example `https://YOUR_PROJECT_REF.supabase.co`
+- `SUPABASE_ANON_KEY` = Supabase Publishable key (`sb_publishable_...`) or legacy anon key
 
-## Recommended repository
+Do not use:
+- `https://...supabase.co/rest/v1`
+- `https://...supabase.co/auth/v1`
+- `sb_secret_...`
+- Supabase `service_role` key
 
-Repository name: `EA-PLAN`  
-Branch: `main`
+## Deployment path
+
+GitHub repository `EA-PLAN` → Vercel → Supabase Auth.
 
 ## Do not commit
 
 - `.env`
-- API secrets
-- service-role keys
+- Supabase Secret/Service Role keys
 - passwords
 - private user data
+
+## GitHub note
+
+If GitHub refuses to commit directly to `main`, create a new branch and upload/commit the package there, then merge the pull request into `main`. GitHub documents that protected branches cannot be edited or uploaded to directly.
