@@ -1,19 +1,41 @@
-# EA PLAN — paket revisi terbaru
+# EA PLAN
 
-Paket ini berisi build statis yang siap dimasukkan ke GitHub dan dideploy ke Vercel.
+**Your Personalized Planning Journey**
 
-## Perubahan utama
-- Logo EA PLAN `public/assets/logo.png` sudah dibuat **PNG transparan**: latar hitam pada file logo tidak ikut tampil.
-- Splash/welcome menempatkan logo + tagline di tengah vertikal dan horizontal.
-- Teks `EA PLAN` duplikat di bawah logo pada splash dihapus.
-- Profil pengguna dapat menyimpan nama, username, bio, foto profil, dan background secara lokal untuk build demo.
-- Foto profil yang tersimpan dipakai kembali pada avatar/header dan halaman profil.
-- Beranda tidak lagi menampilkan Progress, Target Aktif, Projects, Journal, dan Langkah Hari Ini; area tersebut dipusatkan untuk statistik.
-- Bagian kedua `Menarik Dilihat` menjadi `Komentar Mereka`.
+EA PLAN is a personal planning and creative publishing space for planning, goals, journal, ideas, projects, and reflection.
 
-> Catatan: penyimpanan media pada build ini menggunakan localStorage/Data URL. Untuk production multi-device, hubungkan ke Supabase Storage + database sesuai migration/backend yang digunakan.
+## Master package
 
-## Deploy
-1. Upload isi folder ini ke repository GitHub.
-2. Import repository tersebut ke Vercel.
-3. Jika memakai Supabase, isi environment variable di Vercel sesuai project Supabase Anda.
+This repository is intentionally kept as a simple static SPA with a small Vercel API endpoint for Supabase configuration.
+
+```text
+EA-PLAN/
+├── api/config.js
+├── public/assets/
+├── src/app.js
+├── src/supabase.js
+├── src/styles/app.css
+├── supabase/profile-media.sql
+├── docs/
+├── index.html
+├── manifest.json
+├── package.json
+└── vercel.json
+```
+
+## Vercel
+
+No build step is required. Vercel serves `index.html` and the `/src` assets directly. The project uses Node.js 24.x for the `/api/config.js` function.
+
+Set these Production Environment Variables in Vercel:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY` — use the Supabase Publishable key. Never use the Supabase Secret/service-role key in the browser.
+
+## Supabase Storage
+
+Run `supabase/profile-media.sql` in the Supabase SQL editor to create the `profile-media` bucket and its policies.
+
+## Important
+
+The `public/assets/logo.png` file is a transparent-background version of the EA PLAN logo for use over dark and photographic surfaces. The splash image remains a separate photographic background.
