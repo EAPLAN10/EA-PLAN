@@ -1,41 +1,20 @@
-# EA PLAN
+# EA PLAN — Master Final
 
-**Your Personalized Planning Journey**
+EA PLAN — Your Personalized Planning Journey.
 
-EA PLAN is a personal planning and creative publishing space for planning, goals, journal, ideas, projects, and reflection.
+This package is the clean, ready-to-use baseline for the final mobile-first EA PLAN experience. It includes the complete visual flow, authentication, onboarding, home, planning, goals, journal, ideas, projects, journey, statistics, profile, explore, collection, about, guide, and responsive navigation.
 
-## Master package
+## Final flow
+Splash → Welcome → Register/Login → Onboarding 1/3 → 2/3 → 3/3 → Beranda → Planning / Goals / Journal / Ideas / Projects / Journey / Statistik / Profil / Jelajahi / Koleksi / Tentang EA PLAN / Panduan.
 
-This repository is intentionally kept as a simple static SPA with a small Vercel API endpoint for Supabase configuration.
+## Deployment
+1. Replace the contents of the GitHub `main` branch with the contents of this package.
+2. Keep the existing Vercel project.
+3. Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` in Vercel Production.
+4. Run `supabase/profile-media.sql` in Supabase.
+5. Push to `main` and wait for Vercel Production to show **Ready**.
 
-```text
-EA-PLAN/
-├── api/config.js
-├── public/assets/
-├── src/app.js
-├── src/supabase.js
-├── src/styles/app.css
-├── supabase/profile-media.sql
-├── docs/
-├── index.html
-├── manifest.json
-├── package.json
-└── vercel.json
-```
-
-## Vercel
-
-No build step is required. Vercel serves `index.html` and the `/src` assets directly. The project uses Node.js 24.x for the `/api/config.js` function.
-
-Set these Production Environment Variables in Vercel:
-
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY` — use the Supabase Publishable key. Never use the Supabase Secret/service-role key in the browser.
-
-## Supabase Storage
-
-Run `supabase/profile-media.sql` in the Supabase SQL editor to create the `profile-media` bucket and its policies.
+See `docs/FINAL_SETUP.md` for the exact setup notes.
 
 ## Important
-
-The `public/assets/logo.png` file is a transparent-background version of the EA PLAN logo for use over dark and photographic surfaces. The splash image remains a separate photographic background.
+Do not expose Supabase Secret/Service Role keys in frontend code, GitHub, or Vercel client-side configuration.
